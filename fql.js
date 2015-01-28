@@ -52,19 +52,30 @@ FQL.prototype.where = function (filters) {
 	// values may be functions or primitives
 	// functions should be called on each row value
 	var newTable = this.exec();
+	var currentTable = newTable;
 	for (var colName in filters) {
-		var valOrFn = filters[colName]
-		if (valOrFn instanceof Function) {
-			newTable = newTable.filter(function (row) {
-				return valOrFn(row[colName]);
-			});
-		} else {
-			newTable = newTable.filter(function (row) {
-				return valOrFn == row[colName];
-			});
+			
+		if (typeof this["index " + colName] != "undefined"){
+			var indices = this.getIndicesOf(colName, filters[colName]);
+			currentTable = [];
+			for (var i = 0; i < indices.length; i++){
+				currentTable.push(this.movies[indices[i]]);
+			}
+		}
+		else{
+			var valOrFn = filters[colName]
+			if (valOrFn instanceof Function) {
+				currentTable = currentTable.filter(function (row) {
+					return valOrFn(row[colName]);
+				});
+			} else {
+				currentTable = currentTable.filter(function (row) {
+					return valOrFn == row[colName];
+				});
+			}
 		}
 	}
-	return new FQL(newTable);
+	return new FQL(currentTable);
 };
 
 FQL.prototype.count = function () {
@@ -170,7 +181,6 @@ FQL.prototype.getIndicesOf = function (columnName, val) {
 				indices.push(i);
 			}
 		}
-		console.log(indices);
 		return indices;
 	}
 };
